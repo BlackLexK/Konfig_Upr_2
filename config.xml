@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<config>
+    <package_name>my_package</package_name>
+    <repository_url>./test_repo</repository_url>
+    <repo_mode>local</repo_mode>
+    <output_image>graph.png</output_image>
+    <ascii_mode>true</ascii_mode>
+    <filter>core</filter>
+</config>
