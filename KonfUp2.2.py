@@ -1,8 +1,20 @@
 import xml.etree.ElementTree as ET
 from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
+import sys
 
-# Разбор имени пакета 
+
+
+def load_config(path):
+    try:
+        tree = ET.parse(path)
+        return tree.getroot()
+    except Exception as e:
+        print("Ошибка чтения XML:", e)
+        sys.exit(1)
+
+
+# Разбор имени пакета
 def parse_package_name(name):
     try:
         group, artifact, version = name.strip().split(":")
@@ -23,11 +35,12 @@ def download_pom(url):
         with urlopen(url) as f:
             return f.read().decode("utf-8")
     except HTTPError:
-        print("Ошибка: POM не найден по указанному URL.")
+        print("Ошибка: POM не найден.")
         exit(1)
     except URLError:
         print("Ошибка: невозможно подключиться к репозиторию.")
         exit(1)
+
 
 # Извлечение прямых зависимостей
 def extract_dependencies(xml_text):
@@ -54,22 +67,32 @@ def extract_dependencies(xml_text):
     return result
 
 
-# ТОЧКА ВХОДА
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(1)
 
-package = input("Введите имя пакета (groupId:artifactId:version): ")
-repo = input("Введите URL репозитория: ")
+    config_path = sys.argv[1]
 
-group, artifact, version = parse_package_name(package)
-pom_url = build_pom_url(repo, group, artifact, version)
-pom_text = download_pom(pom_url)
-deps = extract_dependencies(pom_text)
+    root = load_config(config_path)
 
-print("\nПрямые зависимости:")
-if deps:
-    for d in deps:
-        print(" -", d)
-else:
-    print("Нет прямых зависимостей")
+    package = root.findtext("package_name", "").strip()
+    repo = root.findtext("repository_url", "").strip()
 
-#com.google.guava:guava:33.0.0-jre
-#https://repo1.maven.org/maven2/
+    print("[INFO] Package:", package)
+    print("[INFO] Repository:", repo)
+
+    group, artifact, version = parse_package_name(package)
+    pom_url = build_pom_url(repo, group, artifact, version)
+    pom_text = download_pom(pom_url)
+    deps = extract_dependencies(pom_text)
+
+    print("\nПрямые зависимости:")
+    if deps:
+        for d in deps:
+            print(" -", d)
+    else:
+        print("Нет прямых зависимостей")
+
+
+if __name__ == "__main__":
+    main()
